@@ -1,263 +1,62 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createClient } from '@supabase/supabase-js';
-import {
-  ArrowRight, Search, Play, Menu, X, Code2, Smartphone, Laptop,
-  ShieldCheck, Sparkles, Youtube, LayoutDashboard, Plus, LogOut,
-  Pencil, Trash2, Eye, EyeOff, ExternalLink, ChevronRight, Clock3
-} from 'lucide-react';
+import { ArrowRight, Search, Play, Menu, X, Code2, Smartphone, Laptop, ShieldCheck, Sparkles, Youtube, Plus, LogOut, Pencil, Trash2, Eye, EyeOff, ExternalLink, ChevronRight, Clock3, FileText, Upload, LayoutDashboard, Video, Image as ImageIcon } from 'lucide-react';
 import './styles.css';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const ADMIN_USER_ID = '0b545fa3-70a6-45e5-8bee-66d20c89d3b8';
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
-
+const categories = ['All tutorials','Web Development','Programming','Computer Tips','Networking','Cybersecurity','Mobile Technology','Software'];
 const demoVideos = [
-  { id: 'demo-1', title: 'Build a modern website from scratch', description: 'A practical walkthrough of planning and building a clean, responsive website.', category: 'Web Development', youtube_id: 'dQw4w9WgXcQ', published: true, created_at: '2026-10-12T10:00:00Z' },
-  { id: 'demo-2', title: 'Essential computer tips everyone should know', description: 'Simple productivity tips and useful shortcuts to work smarter on your computer.', category: 'Computer Tips', youtube_id: 'jfKfPfyJRdk', published: true, created_at: '2026-10-10T10:00:00Z' },
-  { id: 'demo-3', title: 'Understand networking basics', description: 'Learn the fundamentals of IP addresses, routers, DNS and how devices connect.', category: 'Networking', youtube_id: 'qiQR5rTSshw', published: true, created_at: '2026-10-08T10:00:00Z' },
-  { id: 'demo-4', title: 'Getting started with Python programming', description: 'An approachable introduction to Python and writing your first lines of code.', category: 'Programming', youtube_id: 'kqtD5dpn9C8', published: true, created_at: '2026-10-05T10:00:00Z' },
-  { id: 'demo-5', title: 'Protect your accounts online', description: 'Practical security habits for stronger passwords and safer online accounts.', category: 'Cybersecurity', youtube_id: 'inWWhr5tn-k', published: true, created_at: '2026-10-01T10:00:00Z' },
-  { id: 'demo-6', title: 'Useful Android features and settings', description: 'Discover settings and features that make your Android phone more useful.', category: 'Mobile Technology', youtube_id: 'f7uBsb-0sGQ', published: true, created_at: '2026-09-28T10:00:00Z' }
+ {id:'demo-1',title:'Build a modern website from scratch',description:'A practical walkthrough of planning and building a clean, responsive website.',category:'Web Development',youtube_id:'dQw4w9WgXcQ',published:true,created_at:'2026-10-12T10:00:00Z'},
+ {id:'demo-2',title:'Essential computer tips everyone should know',description:'Simple productivity tips and useful shortcuts to work smarter on your computer.',category:'Computer Tips',youtube_id:'jfKfPfyJRdk',published:true,created_at:'2026-10-10T10:00:00Z'},
+ {id:'demo-3',title:'Understand networking basics',description:'Learn the fundamentals of IP addresses, routers, DNS and how devices connect.',category:'Networking',youtube_id:'qiQR5rTSshw',published:true,created_at:'2026-10-08T10:00:00Z'}
 ];
-
-const categories = ['All tutorials', 'Web Development', 'Programming', 'Computer Tips', 'Networking', 'Cybersecurity', 'Mobile Technology', 'Software'];
-
-function getYoutubeId(value) {
-  const input = (value || '').trim();
-  const patterns = [
-    /youtu\.be\/([\w-]{11})/,
-    /youtube\.com\/watch\?.*v=([\w-]{11})/,
-    /youtube\.com\/embed\/([\w-]{11})/,
-    /youtube\.com\/shorts\/([\w-]{11})/
-  ];
-  for (const pattern of patterns) {
-    const match = input.match(pattern);
-    if (match) return match[1];
-  }
-  return /^[\w-]{11}$/.test(input) ? input : null;
+function getYoutubeId(value='') { const s=value.trim(); const m=s.match(/youtu\.be\/([\w-]{11})|youtube\.com\/(?:watch\?.*v=|embed\/|shorts\/)([\w-]{11})/); return m ? (m[1]||m[2]) : (/^[\w-]{11}$/.test(s)?s:null); }
+const blankVideo={title:'',description:'',youtube_url:'',category:'Web Development',published:true};
+const blankArticle={title:'',excerpt:'',body:'',category:'Technology',cover_url:'',published:true};
+function App(){
+ const [path,setPath]=useState(location.pathname),[videos,setVideos]=useState(demoVideos),[articles,setArticles]=useState([]),[query,setQuery]=useState(''),[category,setCategory]=useState('All tutorials'),[activeVideo,setActiveVideo]=useState(null),[activeArticle,setActiveArticle]=useState(null),[menuOpen,setMenuOpen]=useState(false),[session,setSession]=useState(null),[loading,setLoading]=useState(!!supabase),[notice,setNotice]=useState('');
+ const navigate=to=>{history.pushState({},'',to);setPath(to);setMenuOpen(false);scrollTo({top:0,behavior:'smooth'});};
+ useEffect(()=>{const pop=()=>{setPath(location.pathname);setActiveArticle(null)};addEventListener('popstate',pop);return()=>removeEventListener('popstate',pop)},[]);
+ useEffect(()=>{if(!supabase){setLoading(false);return}supabase.auth.getSession().then(({data})=>setSession(data.session));const {data:l}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>l.subscription.unsubscribe()},[]);
+ const reload=async()=>{if(!supabase){setLoading(false);return}const [v,a]=await Promise.all([supabase.from('tutorials').select('*').order('created_at',{ascending:false}),supabase.from('articles').select('*').order('created_at',{ascending:false})]);if(v.error)setNotice(v.error.message);else setVideos(v.data||[]);if(a.error&&a.error.code!=='42P01')setNotice(a.error.message);else if(!a.error)setArticles(a.data||[]);setLoading(false)};
+ useEffect(()=>{reload()},[]);
+ const isAdmin=path.startsWith('/admin'),authorized=session?.user?.id===ADMIN_USER_ID;
+ const visibleVideos=videos.filter(v=>v.published),visibleArticles=articles.filter(a=>a.published);
+ const filtered=useMemo(()=>visibleVideos.filter(v=>(category==='All tutorials'||v.category===category)&&`${v.title} ${v.description} ${v.category}`.toLowerCase().includes(query.toLowerCase())),[videos,category,query]);
+ return <div className="app-shell"><Header navigate={navigate} menuOpen={menuOpen} setMenuOpen={setMenuOpen}/>
+ {isAdmin?<AdminPage session={session} authorized={authorized} setSession={setSession} videos={videos} articles={articles} reload={reload} notice={notice} setNotice={setNotice}/>:activeArticle?<ArticlePage article={activeArticle} back={()=>setActiveArticle(null)}/>:<HomePage videos={filtered} allVideos={visibleVideos} articles={visibleArticles} query={query} setQuery={setQuery} category={category} setCategory={setCategory} loading={loading} openVideo={setActiveVideo} openArticle={setActiveArticle} navigate={navigate}/>}
+ <Footer navigate={navigate}/>{activeVideo&&<VideoModal video={activeVideo} close={()=>setActiveVideo(null)}/>}{!supabase&&<div className="setup-note"><span className="setup-dot"/> Preview mode · Connect Supabase to enable publishing and uploads</div>}</div>
 }
-
-function App() {
-  const [path, setPath] = useState(window.location.pathname);
-  const [videos, setVideos] = useState(demoVideos);
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('All tutorials');
-  const [activeVideo, setActiveVideo] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(Boolean(supabase));
-  const [notice, setNotice] = useState('');
-
-  const navigate = (to) => {
-    window.history.pushState({}, '', to);
-    setPath(to);
-    setMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
-
-  useEffect(() => {
-    if (!supabase) { setLoading(false); return; }
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => setSession(newSession));
-    return () => listener.subscription.unsubscribe();
-  }, []);
-
-  const loadVideos = async () => {
-    if (!supabase) { setLoading(false); return; }
-    const { data, error } = await supabase.from('tutorials').select('*').order('created_at', { ascending: false });
-    if (error) setNotice(error.message);
-    else setVideos(data || []);
-    setLoading(false);
-  };
-
-  useEffect(() => { loadVideos(); }, []);
-
-  const publishedVideos = videos.filter(v => v.published);
-  const filtered = useMemo(() => publishedVideos.filter(v => {
-    const matchesCategory = category === 'All tutorials' || v.category === category;
-    const text = `${v.title} ${v.description} ${v.category}`.toLowerCase();
-    return matchesCategory && text.includes(query.toLowerCase());
-  }), [videos, category, query]);
-
-  const isAdmin = path.startsWith('/admin');
-  const isAuthorizedAdmin = session?.user?.id === ADMIN_USER_ID;
-  const isConfigured = Boolean(supabase);
-
-  return (
-    <div className="app-shell">
-      <Header navigate={navigate} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-      {isAdmin
-        ? <AdminPage supabase={supabase} session={session} isAuthorizedAdmin={isAuthorizedAdmin} setSession={setSession} videos={videos} reload={loadVideos} navigate={navigate} notice={notice} setNotice={setNotice} />
-        : <HomePage videos={filtered} allVideos={publishedVideos} query={query} setQuery={setQuery} category={category} setCategory={setCategory} loading={loading} openVideo={setActiveVideo} navigate={navigate} />}
-      <Footer navigate={navigate} />
-      {activeVideo && <VideoModal video={activeVideo} close={() => setActiveVideo(null)} />}
-      {!isConfigured && <div className="setup-note"><span className="setup-dot" /> Preview mode · Connect Supabase to enable admin tools and save tutorials</div>}
-    </div>
-  );
+function Header({navigate,menuOpen,setMenuOpen}){return <header className="site-header"><div className="header-inner"><button className="brand" onClick={()=>navigate('/')}><span className="brand-mark"><Code2 size={22}/></span><span>ISAAN<span className="brand-blue">TECH</span><small>LEARN. BUILD. INNOVATE.</small></span></button><nav className={menuOpen?'main-nav nav-open':'main-nav'}><a href="#tutorials" onClick={e=>{e.preventDefault();navigate('/');setTimeout(()=>document.getElementById('tutorials')?.scrollIntoView({behavior:'smooth'}),50)}}>Tutorials</a><a href="#articles" onClick={e=>{e.preventDefault();navigate('/');setTimeout(()=>document.getElementById('articles')?.scrollIntoView({behavior:'smooth'}),50)}}>Articles</a><a href="#about" onClick={e=>{e.preventDefault();document.getElementById('about')?.scrollIntoView({behavior:'smooth'})}}>About</a><button className="nav-admin" onClick={()=>navigate('/admin')}>Admin login <ArrowRight size={15}/></button></nav><button className="mobile-menu" onClick={()=>setMenuOpen(!menuOpen)}>{menuOpen?<X/>:<Menu/>}</button></div></header>}
+function HomePage({videos,allVideos,articles,query,setQuery,category,setCategory,loading,openVideo,openArticle,navigate}){return <main><section className="hero-section"><div className="hero-glow"/><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-line"/> YOUR TECH LEARNING SPACE</div><h1>Technology made<br/><span>simple.</span> Skills made<br className="mobile-break"/> powerful.</h1><p className="hero-description">Practical tech tutorials and useful articles to help you learn new skills, solve problems and stay ahead in a digital world.</p><div className="hero-actions"><a href="#tutorials" className="button-primary">Explore tutorials <ArrowRight size={17}/></a><div className="hero-trust"><span className="trust-icon"><Play size={12} fill="currentColor"/></span> Learn at your own pace</div></div><div className="hero-stats"><div><strong>{allVideos.length.toString().padStart(2,'0')}+</strong><span>Video tutorials</span></div><i/><div><strong>{articles.length.toString().padStart(2,'0')}+</strong><span>Articles</span></div><i/><div><strong>100%</strong><span>Free to learn</span></div></div></div><div className="hero-visual"><div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><div className="hero-code-card"><div className="code-top"><span/><span/><span/><label>isaantech.dev</label></div><div className="code-content"><div><b className="code-purple">const</b> <b className="code-blue">knowledge</b> = {'{'}</div><div className="code-indent">learn: <b className="code-green">'continuously'</b>,</div><div className="code-indent">build: <b className="code-green">'fearlessly'</b>,</div><div className="code-indent">share: <b className="code-green">'knowledge'</b></div><div>{'}'};</div><div className="code-comment">// Your next skill starts here.</div><div className="code-cursor">▍</div></div></div><div className="float-chip chip-top"><span className="chip-icon chip-purple"><Code2 size={17}/></span><span><b>Learn to code</b><small>One step at a time</small></span></div><div className="float-chip chip-bottom"><span className="chip-icon chip-green"><Sparkles size={17}/></span><span><b>Level up your skills</b><small>Keep discovering</small></span></div><div className="hero-circle"><Code2 size={30}/></div></div></section>
+ <section className="benefit-strip"><div><span><Laptop size={20}/></span><p><b>Practical lessons</b><small>Real-world tech skills</small></p></div><div><span><Play size={20}/></span><p><b>Video learning</b><small>Clear, visual tutorials</small></p></div><div><span><ShieldCheck size={20}/></span><p><b>Learn for free</b><small>Knowledge for everyone</small></p></div><div><span><Smartphone size={20}/></span><p><b>Learn anywhere</b><small>Desktop, tablet or mobile</small></p></div></section>
+ <section className="tutorial-section section-wrap" id="tutorials"><div className="section-heading"><div><div className="eyebrow"><span className="eyebrow-line"/> THE VIDEO LIBRARY</div><h2>Explore the <span>tutorials.</span></h2><p>Find your next lesson and turn curiosity into practical skills.</p></div><div className="video-count"><b>{allVideos.length}</b><span>tutorials available</span></div></div><div className="library-tools"><div className="category-tabs">{categories.map(c=><button key={c} className={category===c?'category-tab active':'category-tab'} onClick={()=>setCategory(c)}>{c}</button>)}</div><label className="search-box"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search tutorials..."/><kbd>⌕</kbd></label></div>{loading?<div className="loading-state">Loading tutorials…</div>:videos.length?<div className="video-grid">{videos.map((v,i)=><VideoCard key={v.id} video={v} index={i} openVideo={openVideo}/>)}</div>:<div className="empty-state"><div className="empty-icon"><Search/></div><h3>No tutorials found</h3><p>Try another search term or choose a different category.</p><button className="text-button" onClick={()=>{setQuery('');setCategory('All tutorials')}}>Clear filters</button></div>}</section>
+ <section className="article-section section-wrap" id="articles"><div className="section-heading"><div><div className="eyebrow"><span className="eyebrow-line"/> READ & DISCOVER</div><h2>Latest <span>articles.</span></h2><p>Explore ideas, guides and practical technology insights.</p></div><div className="video-count"><b>{articles.length}</b><span>articles available</span></div></div>{articles.length?<div className="article-grid">{articles.slice(0,6).map(a=><button className="article-card" key={a.id} onClick={()=>openArticle(a)}>{a.cover_url?<img src={a.cover_url} alt=""/>:<div className="article-placeholder"><FileText size={30}/></div>}<div className="article-card-copy"><span className="video-category">{a.category||'Technology'}</span><h3>{a.title}</h3><p>{a.excerpt}</p><span className="article-read">Read article <ArrowRight size={15}/></span></div></button>)}</div>:<div className="article-empty"><FileText size={26}/><b>Articles are coming soon.</b><span>Check back for practical guides and technology insights.</span></div>}</section>
+ <section className="about-section" id="about"><div className="about-inner"><div className="about-symbol"><div className="symbol-square"><Code2 size={48}/></div><span className="symbol-dot dot-a"/><span className="symbol-dot dot-b"/><span className="symbol-dot dot-c"/></div><div className="about-copy"><div className="eyebrow"><span className="eyebrow-line"/> ABOUT ISAANTECH</div><h2>Curiosity is the<br/><span>start of everything.</span></h2><p>ISAANTECH is a space for sharing practical technology knowledge. Whether you're taking your first steps or sharpening your skills, there's always something new to discover.</p><a href="#tutorials" className="about-link">Find your next tutorial <ArrowRight size={16}/></a></div></div></section><section className="bottom-cta"><div><span className="cta-icon"><Youtube size={23}/></span><div><h3>Ready to learn something new?</h3><p>Pick a tutorial or article and let's get started.</p></div></div><a href="#tutorials" className="button-primary">Browse tutorials <ArrowRight size={16}/></a></section></main>}
+function VideoCard({video,index,openVideo}){const uploaded=!!video.video_url;return <article className="video-card" onClick={()=>openVideo(video)} tabIndex="0" onKeyDown={e=>e.key==='Enter'&&openVideo(video)}><div className="thumbnail-wrap">{uploaded?<video src={video.video_url} muted preload="metadata"/>:<img src={`https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`} alt="" loading="lazy"/>}<span className="play-overlay"><Play size={23} fill="currentColor"/></span><span className="thumbnail-number">{String(index+1).padStart(2,'0')}</span></div><div className="video-card-content"><span className="video-category">{video.category||'General'}</span><h3>{video.title}</h3><p>{video.description}</p><div className="card-meta"><span><Play size={13}/> Watch tutorial</span><ChevronRight size={16}/></div></div></article>}
+function VideoModal({video,close}){useEffect(()=>{const f=e=>e.key==='Escape'&&close();addEventListener('keydown',f);document.body.style.overflow='hidden';return()=>{removeEventListener('keydown',f);document.body.style.overflow=''}},[]);return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&close()}><div className="video-modal"><button className="modal-close" onClick={close}><X size={21}/></button><div className="embed-frame">{video.video_url?<video src={video.video_url} controls autoPlay/>:<iframe src={`https://www.youtube-nocookie.com/embed/${video.youtube_id}?autoplay=1&rel=0`} title={video.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen/>}</div><div className="modal-info"><span className="video-category">{video.category}</span><h2>{video.title}</h2><p>{video.description}</p>{video.youtube_id&&<a href={`https://www.youtube.com/watch?v=${video.youtube_id}`} target="_blank" rel="noreferrer" className="youtube-link">Watch on YouTube <ExternalLink size={15}/></a>}</div></div></div>}
+function ArticlePage({article,back}){return <main className="article-detail section-wrap"><button className="back-link" onClick={back}>← Back to articles</button>{article.cover_url&&<img className="article-cover" src={article.cover_url} alt=""/>}<span className="video-category">{article.category||'Technology'}</span><h1>{article.title}</h1><p className="article-excerpt">{article.excerpt}</p><div className="article-body">{(article.body||'').split('\n').map((p,i)=>p.trim()?<p key={i}>{p}</p>:<br key={i}/>)}</div></main>}
+function AdminPage({session,authorized,setSession,videos,articles,reload,notice,setNotice}){const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[tab,setTab]=useState('overview'),[videoForm,setVideoForm]=useState(blankVideo),[articleForm,setArticleForm]=useState(blankArticle),[editing,setEditing]=useState(null),[busy,setBusy]=useState(false),[showForm,setShowForm]=useState(false),[uploadFile,setUploadFile]=useState(null),[articleFile,setArticleFile]=useState(null);
+ const signIn=async e=>{e.preventDefault();setBusy(true);setNotice('');const {error}=await supabase.auth.signInWithPassword({email,password});setBusy(false);if(error)setNotice(error.message)};const signOut=async()=>{await supabase?.auth.signOut();setSession(null)};
+ const saveVideo=async e=>{e.preventDefault();if(!supabase)return;const youtube_id=videoForm.youtube_url?getYoutubeId(videoForm.youtube_url):null;if(!youtube_id&&!uploadFile&&!editing){setNotice('Add a YouTube URL or select a video file.');return}if(videoForm.youtube_url&&!youtube_id){setNotice('Please enter a valid YouTube video URL.');return}setBusy(true);setNotice('');let video_url=editing?.video_url||null;if(uploadFile){const ext=uploadFile.name.split('.').pop().toLowerCase();const path=`tutorials/${crypto.randomUUID()}.${ext}`;const {error}=await supabase.storage.from('isaantech-media').upload(path,uploadFile,{upsert:false,contentType:uploadFile.type});if(error){setBusy(false);setNotice(error.message);return}video_url=supabase.storage.from('isaantech-media').getPublicUrl(path).data.publicUrl}const payload={title:videoForm.title,description:videoForm.description,category:videoForm.category,published:videoForm.published,youtube_id,youtube_url:videoForm.youtube_url||null,video_url};const result=editing?await supabase.from('tutorials').update(payload).eq('id',editing.id):await supabase.from('tutorials').insert(payload);setBusy(false);if(result.error)setNotice(result.error.message);else{setNotice(editing?'Tutorial updated.':'Tutorial added.');setVideoForm(blankVideo);setUploadFile(null);setEditing(null);setShowForm(false);await reload()}};
+ const saveArticle=async e=>{e.preventDefault();setBusy(true);let cover_url=editing?.cover_url||articleForm.cover_url||null;if(articleFile){const ext=articleFile.name.split('.').pop().toLowerCase(),path=`article-covers/${crypto.randomUUID()}.${ext}`;const {error}=await supabase.storage.from('isaantech-media').upload(path,articleFile,{upsert:false,contentType:articleFile.type});if(error){setBusy(false);setNotice(error.message);return}cover_url=supabase.storage.from('isaantech-media').getPublicUrl(path).data.publicUrl}const payload={title:articleForm.title,excerpt:articleForm.excerpt,body:articleForm.body,category:articleForm.category,cover_url,published:articleForm.published};const result=editing?await supabase.from('articles').update(payload).eq('id',editing.id):await supabase.from('articles').insert(payload);setBusy(false);if(result.error)setNotice(result.error.message);else{setNotice(editing?'Article updated.':'Article saved.');setArticleForm(blankArticle);setArticleFile(null);setEditing(null);setShowForm(false);await reload()}};
+ const del=async(table,id)=>{if(!confirm('Delete this item permanently?'))return;const {error}=await supabase.from(table).delete().eq('id',id);setNotice(error?.message||'Content deleted.');reload()};
+ if(!supabase)return <main className="admin-page"><div className="admin-gate"><div className="admin-lock"><ShieldCheck size={30}/></div><div className="eyebrow">ADMINISTRATION</div><h1>Connect your <span>dashboard.</span></h1><p>Add your Supabase URL and anon key to Netlify environment variables, then redeploy.</p></div></main>;
+ if(!session)return <main className="admin-page"><form className="login-card" onSubmit={signIn}><div className="login-brand"><span className="brand-mark"><Code2/></span><span>ISAAN<span className="brand-blue">TECH</span></span></div><div className="eyebrow">SECURE ADMIN AREA</div><h1>Welcome <span>back.</span></h1><p>Sign in to manage tutorials, videos and articles.</p>{notice&&<div className="notice error">{notice}</div>}<label>Email address<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Password<input type="password" required value={password} onChange={e=>setPassword(e.target.value)}/></label><button className="button-primary login-submit" disabled={busy}>{busy?'Signing in…':'Sign in to dashboard'} <ArrowRight size={16}/></button></form></main>;
+ if(!authorized)return <main className="admin-page"><div className="admin-gate"><div className="admin-lock"><ShieldCheck size={30}/></div><div className="eyebrow">ACCESS RESTRICTED</div><h1>Admin access <span>denied.</span></h1><p>This account is not authorized to manage ISAANTECH.</p><button className="button-primary" onClick={signOut}>Sign out <ArrowRight size={16}/></button></div></main>;
+ const editVideo=v=>{setEditing(v);setVideoForm({title:v.title,description:v.description||'',youtube_url:v.youtube_url||'',category:v.category||'Web Development',published:v.published});setUploadFile(null);setShowForm(true);setTab('videos')};const editArticle=a=>{setEditing(a);setArticleForm({title:a.title,excerpt:a.excerpt||'',body:a.body||'',category:a.category||'Technology',cover_url:a.cover_url||'',published:a.published});setArticleFile(null);setShowForm(true);setTab('articles')};
+ return <main className="admin-page admin-dashboard"><div className="admin-topline"><div><div className="eyebrow">CONTENT MANAGEMENT</div><h1>Admin <span>dashboard.</span></h1><p>Manage every part of your ISAANTECH learning platform.</p></div><button className="outline-button" onClick={signOut}><LogOut size={16}/> Sign out</button></div>{notice&&<div className="notice">{notice}<button onClick={()=>setNotice('')}><X size={15}/></button></div>}
+ <div className="admin-stats"><div><span>Total tutorials</span><b>{videos.length}</b></div><div><span>Published tutorials</span><b>{videos.filter(v=>v.published).length}</b></div><div><span>Articles</span><b>{articles.length}</b></div><div><span>Published articles</span><b>{articles.filter(a=>a.published).length}</b></div></div>
+ <div className="admin-tabs">{[['overview','Overview',LayoutDashboard],['videos','Video tutorials',Video],['articles','Articles',FileText]].map(([id,label,Icon])=><button className={tab===id?'active':''} onClick={()=>{setTab(id);setShowForm(false);setEditing(null)}} key={id}><Icon size={17}/>{label}</button>)}</div>
+ {tab==='overview'&&<div className="admin-overview"><h2>Welcome to your content studio</h2><p>Publish YouTube tutorials, upload your own video files, and write articles for your visitors.</p><div className="admin-quick-actions"><button className="button-primary" onClick={()=>{setTab('videos');setEditing(null);setVideoForm(blankVideo);setShowForm(true)}}><Plus size={17}/> Add video tutorial</button><button className="outline-button" onClick={()=>{setTab('articles');setEditing(null);setArticleForm(blankArticle);setShowForm(true)}}><Plus size={17}/> Write an article</button><a className="outline-button" href="/" target="_blank">View public website <ExternalLink size={15}/></a></div></div>}
+ {tab==='videos'&&<><div className="admin-list-head"><div><h2>Video tutorials</h2><p>Add YouTube embeds or upload MP4, WebM and other supported video files.</p></div><button className="button-primary" onClick={()=>{setEditing(null);setVideoForm(blankVideo);setUploadFile(null);setShowForm(!showForm)}}><Plus size={17}/> Add video</button></div>{showForm&&<form className="tutorial-form" onSubmit={saveVideo}><div className="form-title"><h3>{editing?'Edit tutorial':'Add a video tutorial'}</h3><button type="button" onClick={()=>setShowForm(false)}><X size={18}/></button></div><div className="form-grid"><label className="span-two">Tutorial title<input required maxLength="120" value={videoForm.title} onChange={e=>setVideoForm({...videoForm,title:e.target.value})}/></label><label className="span-two">YouTube URL (optional if uploading a file)<input value={videoForm.youtube_url} onChange={e=>setVideoForm({...videoForm,youtube_url:e.target.value})} placeholder="https://youtube.com/watch?v=..."/></label><label className="span-two upload-field"><Upload size={18}/> Upload video file<input type="file" accept="video/*" onChange={e=>setUploadFile(e.target.files?.[0]||null)}/><small>{uploadFile?uploadFile.name:'Choose a video from your device. Large files may require a storage limit adjustment.'}</small></label><label>Category<select value={videoForm.category} onChange={e=>setVideoForm({...videoForm,category:e.target.value})}>{categories.filter(c=>c!=='All tutorials').map(c=><option key={c}>{c}</option>)}</select></label><label className="publish-check"><input type="checkbox" checked={videoForm.published} onChange={e=>setVideoForm({...videoForm,published:e.target.checked})}/> Publish immediately</label><label className="span-two">Description<textarea rows="3" maxLength="500" value={videoForm.description} onChange={e=>setVideoForm({...videoForm,description:e.target.value})}/></label></div><div className="form-actions"><button type="button" className="outline-button" onClick={()=>setShowForm(false)}>Cancel</button><button className="button-primary" disabled={busy}>{busy?'Saving…':editing?'Save changes':'Save tutorial'} <ArrowRight size={15}/></button></div></form>}<ContentTable rows={videos} type="tutorials" edit={editVideo} del={del} toggle={async v=>{const {error}=await supabase.from('tutorials').update({published:!v.published}).eq('id',v.id);setNotice(error?.message||'Publication status updated.');reload()}}/></>}
+ {tab==='articles'&&<><div className="admin-list-head"><div><h2>Articles</h2><p>Write useful guides and publish them on the public website.</p></div><button className="button-primary" onClick={()=>{setEditing(null);setArticleForm(blankArticle);setArticleFile(null);setShowForm(!showForm)}}><Plus size={17}/> Write article</button></div>{showForm&&<form className="tutorial-form" onSubmit={saveArticle}><div className="form-title"><h3>{editing?'Edit article':'Create an article'}</h3><button type="button" onClick={()=>setShowForm(false)}><X size={18}/></button></div><div className="form-grid"><label className="span-two">Article title<input required maxLength="160" value={articleForm.title} onChange={e=>setArticleForm({...articleForm,title:e.target.value})}/></label><label className="span-two">Short introduction<textarea required rows="2" maxLength="300" value={articleForm.excerpt} onChange={e=>setArticleForm({...articleForm,excerpt:e.target.value})}/></label><label className="span-two">Article content<textarea required rows="12" value={articleForm.body} onChange={e=>setArticleForm({...articleForm,body:e.target.value})} placeholder="Write your article here. Separate paragraphs with a blank line."/></label><label>Category<input value={articleForm.category} onChange={e=>setArticleForm({...articleForm,category:e.target.value})}/></label><label className="publish-check"><input type="checkbox" checked={articleForm.published} onChange={e=>setArticleForm({...articleForm,published:e.target.checked})}/> Publish immediately</label><label className="span-two upload-field"><ImageIcon size={18}/> Cover image (optional)<input type="file" accept="image/*" onChange={e=>setArticleFile(e.target.files?.[0]||null)}/><small>{articleFile?articleFile.name:'Choose an image from your device.'}</small></label></div><div className="form-actions"><button type="button" className="outline-button" onClick={()=>setShowForm(false)}>Cancel</button><button className="button-primary" disabled={busy}>{busy?'Saving…':editing?'Save changes':'Save article'} <ArrowRight size={15}/></button></div></form>}<ContentTable rows={articles} type="articles" edit={editArticle} del={del} toggle={async a=>{const {error}=await supabase.from('articles').update({published:!a.published}).eq('id',a.id);setNotice(error?.message||'Publication status updated.');reload()}}/></>}
+ </main>
 }
-
-function Header({ navigate, menuOpen, setMenuOpen }) {
-  return <header className="site-header">
-    <div className="header-inner">
-      <button className="brand" onClick={() => navigate('/')} aria-label="ISAANTECH home">
-        <span className="brand-mark"><Code2 size={22} strokeWidth={2.5} /></span>
-        <span>ISAAN<span className="brand-blue">TECH</span><small>LEARN. BUILD. INNOVATE.</small></span>
-      </button>
-      <nav className={menuOpen ? 'main-nav nav-open' : 'main-nav'}>
-        <a href="#tutorials" onClick={(e) => { e.preventDefault(); navigate('/'); document.getElementById('tutorials')?.scrollIntoView({ behavior: 'smooth' }); }}>Tutorials</a>
-        <a href="#about" onClick={(e) => { e.preventDefault(); document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' }); }}>About</a>
-        <button className="nav-admin" onClick={() => navigate('/admin')}>Admin login <ArrowRight size={15} /></button>
-      </nav>
-      <button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">{menuOpen ? <X /> : <Menu />}</button>
-    </div>
-  </header>;
-}
-
-function HomePage({ videos, allVideos, query, setQuery, category, setCategory, loading, openVideo, navigate }) {
-  const featured = allVideos[0];
-  return <>
-    <main>
-      <section className="hero-section">
-        <div className="hero-glow" />
-        <div className="hero-copy">
-          <div className="eyebrow"><span className="eyebrow-line" /> YOUR TECH LEARNING SPACE</div>
-          <h1>Technology made<br /><span>simple.</span> Skills made<br className="mobile-break" /> powerful.</h1>
-          <p className="hero-description">Practical tech tutorials to help you learn new skills, solve problems and stay ahead in a digital world.</p>
-          <div className="hero-actions">
-            <a href="#tutorials" className="button-primary">Explore tutorials <ArrowRight size={17} /></a>
-            <div className="hero-trust"><span className="trust-icon"><Play size={12} fill="currentColor" /></span> Learn at your own pace</div>
-          </div>
-          <div className="hero-stats">
-            <div><strong>{allVideos.length.toString().padStart(2, '0')}+</strong><span>Video tutorials</span></div>
-            <i />
-            <div><strong>100%</strong><span>Free to learn</span></div>
-            <i />
-            <div><strong>Anytime</strong><span>Learn anywhere</span></div>
-          </div>
-        </div>
-        <div className="hero-visual">
-          <div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" />
-          <div className="hero-code-card">
-            <div className="code-top"><span /><span /><span /><label>isaantech.dev</label></div>
-            <div className="code-content">
-              <div><b className="code-purple">const</b> <b className="code-blue">knowledge</b> = {'{'}</div>
-              <div className="code-indent">learn: <b className="code-green">'continuously'</b>,</div>
-              <div className="code-indent">build: <b className="code-green">'fearlessly'</b>,</div>
-              <div className="code-indent">share: <b className="code-green">'knowledge'</b></div>
-              <div>{'}'};</div>
-              <div className="code-comment">// Your next skill starts here.</div>
-              <div className="code-cursor">▍</div>
-            </div>
-          </div>
-          <div className="float-chip chip-top"><span className="chip-icon chip-purple"><Code2 size={17} /></span><span><b>Learn to code</b><small>One step at a time</small></span></div>
-          <div className="float-chip chip-bottom"><span className="chip-icon chip-green"><Sparkles size={17} /></span><span><b>Level up your skills</b><small>Keep discovering</small></span></div>
-          <div className="hero-circle"><Code2 size={30} /></div>
-        </div>
-      </section>
-
-      <section className="benefit-strip">
-        <div><span><Laptop size={20} /></span><p><b>Practical lessons</b><small>Real-world tech skills</small></p></div>
-        <div><span><Play size={20} /></span><p><b>Video learning</b><small>Clear, visual tutorials</small></p></div>
-        <div><span><ShieldCheck size={20} /></span><p><b>Learn for free</b><small>Knowledge for everyone</small></p></div>
-        <div><span><Smartphone size={20} /></span><p><b>Learn anywhere</b><small>Desktop, tablet or mobile</small></p></div>
-      </section>
-
-      <section className="tutorial-section section-wrap" id="tutorials">
-        <div className="section-heading">
-          <div><div className="eyebrow"><span className="eyebrow-line" /> THE VIDEO LIBRARY</div><h2>Explore the <span>tutorials.</span></h2><p>Find your next lesson and turn curiosity into practical skills.</p></div>
-          <div className="video-count"><b>{allVideos.length}</b><span>tutorials available</span></div>
-        </div>
-        <div className="library-tools">
-          <div className="category-tabs">
-            {categories.map(c => <button key={c} className={category === c ? 'category-tab active' : 'category-tab'} onClick={() => setCategory(c)}>{c}</button>)}
-          </div>
-          <label className="search-box"><Search size={18} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search tutorials..." /><kbd>⌕</kbd></label>
-        </div>
-        {loading ? <div className="loading-state">Loading tutorials…</div> : videos.length ? <div className="video-grid">
-          {videos.map((video, index) => <VideoCard key={video.id} video={video} index={index} openVideo={openVideo} />)}
-        </div> : <div className="empty-state"><div className="empty-icon"><Search /></div><h3>No tutorials found</h3><p>Try another search term or choose a different category.</p><button className="text-button" onClick={() => { setQuery(''); setCategory('All tutorials'); }}>Clear filters</button></div>}
-      </section>
-
-      <section className="about-section" id="about">
-        <div className="about-inner">
-          <div className="about-symbol"><div className="symbol-square"><Code2 size={48} /></div><span className="symbol-dot dot-a" /><span className="symbol-dot dot-b" /><span className="symbol-dot dot-c" /></div>
-          <div className="about-copy"><div className="eyebrow"><span className="eyebrow-line" /> ABOUT ISAANTECH</div><h2>Curiosity is the<br /><span>start of everything.</span></h2><p>ISAANTECH is a space for sharing practical technology knowledge. Whether you're taking your first steps or sharpening your skills, there's always something new to discover.</p><a href="#tutorials" className="about-link">Find your next tutorial <ArrowRight size={16} /></a></div>
-        </div>
-      </section>
-      <section className="bottom-cta"><div><span className="cta-icon"><Youtube size={23} /></span><div><h3>Ready to learn something new?</h3><p>Pick a tutorial and let's get started.</p></div></div><a href="#tutorials" className="button-primary">Browse tutorials <ArrowRight size={16} /></a></section>
-    </main>
-  </>;
-}
-
-function VideoCard({ video, index, openVideo }) {
-  const thumbnail = `https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`;
-  return <article className="video-card" onClick={() => openVideo(video)} tabIndex="0" onKeyDown={e => e.key === 'Enter' && openVideo(video)}>
-    <div className="thumbnail-wrap"><img src={thumbnail} alt="" loading="lazy" onError={e => { e.currentTarget.src = 'https://placehold.co/640x360/eaf1fb/2878d0?text=ISAANTECH+Tutorial'; }} /><span className="play-overlay"><Play size={23} fill="currentColor" /></span><span className="thumbnail-number">{String(index + 1).padStart(2, '0')}</span></div>
-    <div className="video-card-content"><span className="video-category">{video.category || 'General'}</span><h3>{video.title}</h3><p>{video.description}</p><div className="card-meta"><span><Play size={13} /> Watch tutorial</span><ChevronRight size={16} /></div></div>
-  </article>;
-}
-
-function VideoModal({ video, close }) {
-  useEffect(() => { const onKey = e => e.key === 'Escape' && close(); window.addEventListener('keydown', onKey); document.body.style.overflow = 'hidden'; return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; }; }, []);
-  return <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && close()}><div className="video-modal"><button className="modal-close" onClick={close}><X size={21} /></button><div className="embed-frame"><iframe src={`https://www.youtube-nocookie.com/embed/${video.youtube_id}?autoplay=1&rel=0`} title={video.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /></div><div className="modal-info"><span className="video-category">{video.category}</span><h2>{video.title}</h2><p>{video.description}</p><a href={`https://www.youtube.com/watch?v=${video.youtube_id}`} target="_blank" rel="noreferrer" className="youtube-link">Watch on YouTube <ExternalLink size={15} /></a></div></div></div>;
-}
-
-function AdminPage({ supabase, session, isAuthorizedAdmin, setSession, videos, reload, navigate, notice, setNotice }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [form, setForm] = useState({ title: '', description: '', youtube_url: '', category: 'Web Development', published: true });
-  const [editing, setEditing] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-
-  const signIn = async (e) => {
-    e.preventDefault(); if (!supabase) return;
-    setBusy(true); setNotice('');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setBusy(false); if (error) setNotice(error.message);
-  };
-  const signOut = async () => { await supabase?.auth.signOut(); setSession(null); };
-  const saveVideo = async (e) => {
-    e.preventDefault();
-    const youtube_id = getYoutubeId(form.youtube_url);
-    if (!youtube_id) { setNotice('Please enter a valid YouTube video URL or 11-character video ID.'); return; }
-    setBusy(true); setNotice('');
-    const payload = { ...form, youtube_id };
-    const result = editing
-      ? await supabase.from('tutorials').update(payload).eq('id', editing)
-      : await supabase.from('tutorials').insert(payload);
-    setBusy(false);
-    if (result.error) setNotice(result.error.message);
-    else { setNotice(editing ? 'Tutorial updated.' : 'Tutorial added.'); setForm({ title: '', description: '', youtube_url: '', category: 'Web Development', published: true }); setEditing(null); setShowForm(false); reload(); }
-  };
-  const editVideo = video => { setEditing(video.id); setForm({ title: video.title, description: video.description || '', youtube_url: video.youtube_url || `https://youtu.be/${video.youtube_id}`, category: video.category || 'General', published: video.published }); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const deleteVideo = async id => { if (!window.confirm('Delete this tutorial? This cannot be undone.')) return; const { error } = await supabase.from('tutorials').delete().eq('id', id); setNotice(error ? error.message : 'Tutorial deleted.'); reload(); };
-
-  if (!supabase) return <main className="admin-page"><div className="admin-gate"><div className="admin-lock"><ShieldCheck size={30} /></div><div className="eyebrow">ADMINISTRATION</div><h1>Connect your <span>dashboard.</span></h1><p>To sign in and manage tutorials, add your Supabase project URL and anon key to the environment variables. Follow the setup guide in the project README.</p><button className="button-primary" onClick={() => navigate('/')}>Back to website <ArrowRight size={16} /></button></div></main>;
-
-  if (!session) return <main className="admin-page"><form className="login-card" onSubmit={signIn}><div className="login-brand"><span className="brand-mark"><Code2 /></span><span>ISAAN<span className="brand-blue">TECH</span></span></div><div className="eyebrow">SECURE ADMIN AREA</div><h1>Welcome <span>back.</span></h1><p>Sign in to manage your tutorials and content.</p>{notice && <div className="notice error">{notice}</div>}<label>Email address<input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@example.com" /></label><label>Password<input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" /></label><button className="button-primary login-submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in to dashboard'} <ArrowRight size={16} /></button><button type="button" className="back-link" onClick={() => navigate('/')}>← Back to ISAANTECH</button></form></main>;
-
-  if (session && !isAuthorizedAdmin) return <main className="admin-page"><div className="admin-gate"><div className="admin-lock"><ShieldCheck size={30} /></div><div className="eyebrow">ACCESS RESTRICTED</div><h1>Admin access <span>denied.</span></h1><p>This account is not authorized to manage ISAANTECH tutorials. Sign in with the designated administrator account.</p><button className="button-primary" onClick={signOut}>Sign out <ArrowRight size={16} /></button></div></main>;
-
-  return <main className="admin-page admin-dashboard"><div className="admin-topline"><div><div className="eyebrow">CONTENT MANAGEMENT</div><h1>Admin <span>dashboard.</span></h1><p>Manage the tutorials on your ISAANTECH website.</p></div><button className="outline-button" onClick={signOut}><LogOut size={16} /> Sign out</button></div>
-    {notice && <div className="notice">{notice}<button onClick={() => setNotice('')}><X size={15} /></button></div>}
-    <div className="admin-stats"><div><span>Total tutorials</span><b>{videos.length}</b></div><div><span>Published</span><b>{videos.filter(v => v.published).length}</b></div><div><span>Drafts</span><b>{videos.filter(v => !v.published).length}</b></div></div>
-    <div className="admin-list-head"><div><h2>Your tutorials</h2><p>Add and organize your video content.</p></div><button className="button-primary" onClick={() => { setEditing(null); setForm({ title: '', description: '', youtube_url: '', category: 'Web Development', published: true }); setShowForm(!showForm); }}><Plus size={17} /> Add tutorial</button></div>
-    {showForm && <form className="tutorial-form" onSubmit={saveVideo}><div className="form-title"><h3>{editing ? 'Edit tutorial' : 'Add a new tutorial'}</h3><button type="button" onClick={() => setShowForm(false)}><X size={18} /></button></div><div className="form-grid"><label className="span-two">Tutorial title<input required maxLength="120" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. How to build a website with React" /></label><label className="span-two">YouTube video URL<input required value={form.youtube_url} onChange={e => setForm({ ...form, youtube_url: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." /></label><label>Category<select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>{categories.filter(c => c !== 'All tutorials').map(c => <option key={c}>{c}</option>)}</select></label><label className="publish-check"><input type="checkbox" checked={form.published} onChange={e => setForm({ ...form, published: e.target.checked })} /> Publish immediately</label><label className="span-two">Description<textarea rows="3" maxLength="500" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="What will viewers learn in this tutorial?" /></label></div><div className="form-actions"><button type="button" className="outline-button" onClick={() => setShowForm(false)}>Cancel</button><button className="button-primary" disabled={busy}>{busy ? 'Saving…' : editing ? 'Save changes' : 'Add tutorial'} <ArrowRight size={15} /></button></div></form>}
-    <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>TUTORIAL</th><th>CATEGORY</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>{videos.map(v => <tr key={v.id}><td><div className="table-video"><img src={`https://img.youtube.com/vi/${v.youtube_id}/default.jpg`} alt="" /><b>{v.title}</b></div></td><td>{v.category}</td><td><span className={v.published ? 'status published' : 'status draft'}>{v.published ? 'Published' : 'Draft'}</span></td><td><div className="table-actions"><button title="Edit" onClick={() => editVideo(v)}><Pencil size={16} /></button><button title={v.published ? 'Unpublish' : 'Publish'} onClick={async () => { const { error } = await supabase.from('tutorials').update({ published: !v.published }).eq('id', v.id); setNotice(error ? error.message : 'Tutorial status updated.'); reload(); }}>{v.published ? <EyeOff size={16} /> : <Eye size={16} />}</button><button title="Delete" className="delete-action" onClick={() => deleteVideo(v.id)}><Trash2 size={16} /></button></div></td></tr>)}</tbody></table>{!videos.length && <div className="empty-state"><h3>No tutorials yet</h3><p>Add your first YouTube tutorial to get started.</p></div>}</div>
-  </main>;
-}
-
-function Footer({ navigate }) {
-  return <footer className="site-footer"><div className="footer-main"><button className="brand footer-brand" onClick={() => navigate('/')}><span className="brand-mark"><Code2 size={21} /></span><span>ISAAN<span className="brand-blue">TECH</span><small>LEARN. BUILD. INNOVATE.</small></span></button><p>Making technology easier to understand,<br />one tutorial at a time.</p><div className="footer-social"><a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube"><Youtube size={19} /></a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} ISAANTECH. All rights reserved.</span><span>Built for curious minds <span className="footer-heart">♥</span></span></div></footer>;
-}
-
-createRoot(document.getElementById('root')).render(<App />);
+function ContentTable({rows,type,edit,del,toggle}){return <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>TITLE</th><th>CATEGORY</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td><div className="table-video">{type==='tutorials'&&r.youtube_id?<img src={`https://img.youtube.com/vi/${r.youtube_id}/default.jpg`} alt=""/>:<FileText size={22}/>}<b>{r.title}</b></div></td><td>{r.category}</td><td><span className={r.published?'status published':'status draft'}>{r.published?'Published':'Draft'}</span></td><td><div className="table-actions"><button title="Edit" onClick={()=>edit(r)}><Pencil size={16}/></button><button title={r.published?'Unpublish':'Publish'} onClick={()=>toggle(r)}>{r.published?<EyeOff size={16}/>:<Eye size={16}/>}</button><button title="Delete" className="delete-action" onClick={()=>del(type,r.id)}><Trash2 size={16}/></button></div></td></tr>)}</tbody></table>{!rows.length&&<div className="empty-state"><h3>No {type==='tutorials'?'tutorials':'articles'} yet</h3><p>Use the button above to create your first item.</p></div>}</div>}
+function Footer({navigate}){return <footer className="site-footer"><div className="footer-main"><button className="brand footer-brand" onClick={()=>navigate('/')}><span className="brand-mark"><Code2 size={21}/></span><span>ISAAN<span className="brand-blue">TECH</span><small>LEARN. BUILD. INNOVATE.</small></span></button><p>Making technology easier to understand,<br/>one tutorial at a time.</p><div className="footer-social"><a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube"><Youtube size={19}/></a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} ISAANTECH. All rights reserved.</span><span>Built for curious minds <span className="footer-heart">♥</span></span></div></footer>}
+createRoot(document.getElementById('root')).render(<App/>);
