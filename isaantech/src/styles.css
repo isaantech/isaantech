@@ -43,3 +43,4 @@
 .status.scheduled{background:#fff5df;color:#9b6b12}
 
 @media(max-width:760px){.article-reading-progress{display:none}}
+.article-reading-progress{display:none}
