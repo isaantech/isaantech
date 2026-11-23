@@ -18,7 +18,7 @@
 
 /* ISAANTECH Article Studio: rich editor and professional reader */
 .article-editor-shell{border:1px solid #dfe7f1;border-radius:12px;background:#fff;overflow:hidden;margin-top:8px}
-.article-editor-toolbar{display:flex;flex-wrap:wrap;gap:7px;padding:10px;background:#f6f8fb;border-bottom:1px solid #e7edf5;position:sticky;top:82px;z-index:5}
+.article-editor-toolbar{display:flex;flex-wrap:wrap;gap:7px;padding:10px;background:#f6f8fb;border-bottom:1px solid #e7edf5;position:static}
 .toolbar-group{display:flex;align-items:center;gap:3px;padding-right:7px;border-right:1px solid #dfe6ef}
 .toolbar-group:last-child{border-right:0;padding-right:0}
 .editor-tool{min-width:30px;height:31px;padding:0 7px;border:1px solid transparent;border-radius:6px;background:transparent;color:#334761;font-size:12px;font-weight:700}
