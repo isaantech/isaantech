@@ -1,5 +1,5 @@
 const ALLOWED_TAGS = new Set(['P','BR','H1','H2','H3','H4','STRONG','B','EM','I','U','S','DEL','UL','OL','LI','BLOCKQUOTE','PRE','CODE','A','FIGURE','FIGCAPTION','IMG','TABLE','THEAD','TBODY','TR','TH','TD','HR','SPAN','DIV','IFRAME']);
-const ALLOWED_STYLES = new Set(['color','background-color','font-family','font-size','text-align','margin-left']);
+const ALLOWED_STYLES = new Set(['color','background-color','font-family','font-size','text-align','margin-left','margin-bottom']);
 
 export function escapeHtml(value='') {
   return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -56,7 +56,7 @@ export function sanitizeArticleHtml(html='') {
         [...child.attributes].forEach(attr => {
           const name = attr.name.toLowerCase();
           if (name === 'style') {
-            const safe = attr.value.split(';').map(rule=>rule.trim()).filter(Boolean).filter(rule=>ALLOWED_STYLES.has(rule.split(':')[0].trim().toLowerCase()) && !/url\s*\(|expression|javascript/i.test(rule)).join('; ');
+            const safe = attr.value.split(';').map(rule=>rule.trim()).filter(Boolean).filter(rule=>{const parts=rule.split(':');const property=parts.shift()?.trim().toLowerCase();const value=parts.join(':').trim();return ALLOWED_STYLES.has(property) && (property!=='margin-bottom' || /^(10|18|28)px$/.test(value)) && !/url\s*\(|expression|javascript/i.test(rule);}).join('; ');
             if (safe) child.setAttribute('style', safe); else child.removeAttribute('style');
           } else if (tag === 'A' && ['href','target','rel','title'].includes(name)) {
             if (name === 'href' && !/^(https?:|mailto:)/i.test(attr.value)) child.removeAttribute(attr.name);
