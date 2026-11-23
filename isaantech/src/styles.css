@@ -41,3 +41,5 @@
 @media(max-width:760px){.article-editor-toolbar{top:72px}.toolbar-group{flex-wrap:wrap}.article-rich-editor{min-height:300px;padding:17px;font-size:14px}.article-editor-footer{flex-direction:column}.article-reading-progress{top:72px}.article-reading-layout{display:block}.article-toc{position:static;margin-bottom:25px}.article-heading-wrap h1{font-size:34px}.article-body{font-size:15px}.related-article-grid{grid-template-columns:1fr}.article-cover{max-height:270px}.article-meta{gap:10px}.article-reader-actions{flex-wrap:wrap}}
 .article-tag-list{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 15px}.article-tag-list span{padding:5px 8px;border-radius:5px;background:#f0f5fc;color:#5b7290;font-size:10px}
 .status.scheduled{background:#fff5df;color:#9b6b12}
+
+@media(max-width:760px){.article-reading-progress{display:none}}
