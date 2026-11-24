@@ -5,6 +5,10 @@ import { ArrowRight, Search, Play, Menu, X, Code2, Smartphone, Laptop, ShieldChe
 import ArticleEditor from './ArticleEditor.jsx';
 import { getArticleHtml, getArticleHeadings, readingMinutes, markdownToHtml } from './articleContent.js';
 import './styles.css';
+import './premiumViewer.css';
+
+import './premiumVideo.css';
+
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;

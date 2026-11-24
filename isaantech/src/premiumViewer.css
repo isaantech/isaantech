@@ -1,0 +1,33 @@
+/* ISAANTECH PREMIUM ARTICLE VIEWER */
+.article-detail{max-width:1160px;padding-top:42px;padding-bottom:100px}
+.article-heading-wrap{max-width:900px;margin:0 auto}
+.article-heading-wrap h1{font-size:clamp(36px,5.2vw,58px);line-height:1.1;letter-spacing:-2.2px;font-weight:800;color:#142944;margin:22px 0}
+.article-excerpt{font-size:17px;line-height:1.8;color:#64748b;max-width:780px}
+.article-meta{gap:20px;padding:15px 0;border-top:1px solid #edf1f6;border-bottom:1px solid #edf1f6;font-size:12px}
+.article-cover{max-height:540px;border-radius:20px;margin:30px auto 40px;box-shadow:0 18px 55px rgba(20,41,68,.10)}
+.article-reading-layout{gap:48px;margin-top:45px}
+.article-toc{padding:22px;border:1px solid #e8edf5;border-radius:15px;background:#fbfcfe;box-shadow:0 8px 28px rgba(25,48,78,.035)}
+.article-toc b{font-size:13px;letter-spacing:-.2px}
+.article-toc a{font-size:12px;line-height:1.7;transition:color .2s ease}
+.article-body{font-size:17px;line-height:1.95;color:#394b63}
+.article-body h1,.article-body h2,.article-body h3,.article-body h4{color:#172c48;letter-spacing:-.7px}
+.article-body h2{margin-top:1.9em;padding-bottom:10px;border-bottom:1px solid #edf1f6}
+.article-body img{max-width:100%;height:auto;border-radius:15px}
+.article-body blockquote{padding:23px 25px;border-left-width:4px;border-radius:0 13px 13px 0}
+.article-body pre{border-radius:14px;padding:23px;box-shadow:0 10px 30px rgba(12,25,43,.12)}
+.article-reader-actions{gap:12px;margin:22px 0 30px}
+.article-author-card{border-radius:16px;padding:25px;background:#fbfcff}
+.related-articles{margin-top:75px}
+.related-article-card{border-radius:15px;border:1px solid #e8edf5;box-shadow:0 5px 20px rgba(25,48,78,.035);transition:transform .25s ease,box-shadow .25s ease}
+.related-article-card:hover{transform:translateY(-4px);box-shadow:0 14px 35px rgba(25,48,78,.09)}
+.related-article-card img{height:165px}
+@media(max-width:760px){
+.article-detail{padding-top:25px;padding-bottom:65px}
+.article-heading-wrap h1{font-size:35px;letter-spacing:-1.4px;line-height:1.16}
+.article-excerpt{font-size:15px}
+.article-body{font-size:16px;line-height:1.85}
+.article-reading-layout{margin-top:25px}
+.article-toc{padding:17px;border-radius:12px}
+.article-cover{border-radius:13px;margin:22px 0 28px}
+.article-author-card{padding:19px}
+}
