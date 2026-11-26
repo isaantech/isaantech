@@ -45,7 +45,265 @@
 @media(max-width:760px){.article-reading-progress{display:none}}
 .article-reading-progress{display:none}
 
-.article-reading-layout.no-toc{grid-template-columns:minmax(0,760px)}
+.article-reading-layout.no-toc{grid-template-columns:minmax(0,1fr);justify-content:stretch;width:100%;max-width:100%}{grid-template-columns:minmax(0,760px)}
 
 
 @media(min-width:761px){.article-detail{max-width:1100px}.article-cover{max-width:1000px;margin-left:auto;margin-right:auto}.article-reading-layout.has-toc{grid-template-columns:minmax(0,220px) minmax(0,760px);gap:clamp(20px,4vw,46px)}}
+
+/* Consistent spacing between homepage sections */
+.tutorial-section,
+.article-section {
+  margin-top: 80px;
+}
+
+.article-section {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.article-section .section-heading {
+  margin-bottom: 32px;
+}
+
+.about-section {
+  margin-top: 80px;
+}
+
+.bottom-cta {
+  margin-top: 80px;
+  margin-bottom: 80px;
+}
+
+/* Consistent spacing on smaller screens */
+@media (max-width: 650px) {
+  .tutorial-section,
+  .article-section,
+  .about-section {
+    margin-top: 48px;
+  }
+
+  .bottom-cta {
+    margin-top: 48px;
+    margin-bottom: 48px;
+  }
+
+  .article-section .section-heading {
+    margin-bottom: 24px;
+  }
+}
+
+/* ISAANTECH — Homepage design refinement */
+
+/* Consistent section headings */
+.tutorial-section .section-heading,
+.article-section .section-heading {
+  margin-bottom: 30px;
+  align-items: flex-end;
+}
+
+.section-heading h2 {
+  line-height: 1.2;
+  letter-spacing: -1.5px;
+}
+
+.section-heading p {
+  max-width: 520px;
+}
+
+/* Consistent video and article card design */
+.video-card,
+.article-card {
+  border: 1px solid #e7edf5;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+
+.video-card:hover,
+.article-card:hover {
+  transform: translateY(-4px);
+  border-color: #d6e5f8;
+  box-shadow: 0 14px 32px rgba(30, 58, 95, .09);
+}
+
+/* Matching card image proportions */
+.thumbnail-wrap {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+.article-card > img,
+.article-placeholder {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+/* Matching card content spacing */
+.video-card-content,
+.article-card-copy {
+  padding: 19px;
+}
+
+.video-card h3,
+.article-card-copy h3 {
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: -.2px;
+  color: #243954;
+  margin: 11px 0 8px;
+}
+
+.video-card-content > p,
+.article-card-copy p {
+  color: #7d8b9f;
+  font-size: 11px;
+  line-height: 1.75;
+}
+
+/* Consistent grid spacing */
+.video-grid,
+.article-grid {
+  gap: 22px;
+}
+
+.article-card-copy p {
+  min-height: 58px;
+}
+
+/* Improve About section balance */
+.about-inner {
+  max-width: 1144px;
+  gap: 65px;
+  padding-top: 70px;
+  padding-bottom: 70px;
+}
+
+.about-copy {
+  max-width: 540px;
+}
+
+.about-copy > p {
+  line-height: 1.9;
+}
+
+/* Refine the bottom call-to-action */
+.bottom-cta {
+  box-sizing: border-box;
+}
+
+/* Tablet and mobile refinements */
+@media (max-width: 900px) {
+  .about-inner {
+    gap: 35px;
+  }
+}
+
+@media (max-width: 650px) {
+  .tutorial-section .section-heading,
+  .article-section .section-heading {
+    margin-bottom: 23px;
+  }
+
+  .video-grid,
+  .article-grid {
+    gap: 17px;
+  }
+
+  .video-card-content,
+  .article-card-copy {
+    padding: 16px;
+  }
+
+  .video-card h3,
+  .article-card-copy h3 {
+    font-size: 14px;
+  }
+
+  .article-card-copy p {
+    min-height: 0;
+  }
+
+  .about-inner {
+    gap: 12px;
+    padding-top: 38px;
+    padding-bottom: 42px;
+  }
+}
+/* ISAANTECH contact footer */
+.footer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #c5d0df;
+  text-decoration: none;
+  font-size: 11px;
+}
+
+.footer-contact a:hover {
+  color: #80b7ff;
+}
+
+.footer-social {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-social a,
+.footer-social > span {
+  width: 35px;
+  height: 35px;
+  border: 1px solid #34465f;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+
+.footer-social a {
+  color: #ff0033;
+}
+
+.footer-social > span:nth-child(2) {
+  color: #1877f2;
+}
+
+.footer-social > span:nth-child(3) {
+  color: #e4405f;
+}
+
+.footer-social > span:nth-child(4) {
+  color: #25f4ee;
+}
+
+.footer-social > span:nth-child(5) {
+  color: #ffffff;
+}
+
+@media (max-width: 650px) {
+  .footer-contact {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .footer-social {
+    margin-left: 0;
+  }
+}
+
+/* Remove the article contents sidebar */
+.article-toc {
+  display: none !important;
+}
+
+.article-reading-layout.has-toc {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+}
